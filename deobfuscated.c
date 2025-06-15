@@ -55,8 +55,7 @@ int shift_at = 0;
 
 SDL_Event dragdropevent;
 
-void *renderer;
-void *texture;
+
 
 // Read a byte from CHR ROM or CHR RAM.
 uint8_t *get_chr_byte(uint16_t a) {
@@ -255,16 +254,6 @@ uint8_t read_pc() {
 uint8_t set_nz(uint8_t val) { return P = P & 125 | val & 128 | !val * 2; }
 
 int main(int argc, char **argv) {
-  SDL_Init(SDL_INIT_VIDEO);
-  key_state = (uint8_t*)SDL_GetKeyboardState(0);
-  // Create window 1024x840. The framebuffer is 256x240, but we don't draw the
-  // top or bottom 8 rows. Scaling up by 4x gives 1024x960, but that looks
-  // squished because the NES doesn't have square pixels. So shrink it by 7/8.
-  renderer = SDL_CreateRenderer(
-      SDL_CreateWindow("smolnes", 0, 0, 1024, 840, SDL_WINDOW_SHOWN), -1,
-      SDL_RENDERER_PRESENTVSYNC);
-  texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_BGR565,
-                                    SDL_TEXTUREACCESS_STREAMING, 256, 224);
   EM_ASM(
       document.body.addEventListener('dragover', function(e) {
         e.preventDefault();
@@ -289,6 +278,16 @@ int main(int argc, char **argv) {
 }
 
 int file_handler(char* file, uint32_t filelen) {
+  SDL_Init(SDL_INIT_VIDEO);
+  key_state = (uint8_t*)SDL_GetKeyboardState(0);
+  // Create window 1024x840. The framebuffer is 256x240, but we don't draw the
+  // top or bottom 8 rows. Scaling up by 4x gives 1024x960, but that looks
+  // squished because the NES doesn't have square pixels. So shrink it by 7/8.
+  void *renderer = SDL_CreateRenderer(
+      SDL_CreateWindow("smolnes", 0, 0, 1024, 840, SDL_WINDOW_SHOWN), -1,
+      SDL_RENDERER_PRESENTVSYNC);
+  void *texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_BGR565,
+                                    SDL_TEXTUREACCESS_STREAMING, 256, 224);
   memset(rombuf, 0, 1024 * 1024);
 
   memcpy(rombuf, file, filelen);
