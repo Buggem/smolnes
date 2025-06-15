@@ -20,7 +20,7 @@ smolnes: smolnes.c
 
 deobfuscated: deobfuscated.c
 	mkdir -p build
-	emcc -O2 -s USE_SDL=2 -o build/$@.html $< -lSDL2 -g ${WARN}
+	emcc -O2 -s USE_SDL=2 -s EXPORTED_FUNCTIONS=_file_handler -o build/$@.html $< -lSDL2 -g ${WARN}
 
 clean:
 	rm -f smolnes deobfuscated
