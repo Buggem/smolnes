@@ -285,10 +285,10 @@ int main(int argc, char **argv) {
           reader.readAsArrayBuffer(file);
         }
       });
-  )
+  );
 }
 
-void file_handler(char* file, uint32_t filelen) {
+int file_handler(char* file, uint32_t filelen) {
   memset(rombuf, 0, 1024 * 1024);
 
   memcpy(rombuf, file, filelen);
