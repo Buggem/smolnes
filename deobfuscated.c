@@ -1,6 +1,6 @@
 #include <SDL2/SDL.h>
 #include <stdint.h>
-
+#include <emscripten.h>
 #define PULL mem(++S, 1, 0, 0)
 #define PUSH(x) mem(S--, 1, x, 1)
 
