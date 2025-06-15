@@ -262,6 +262,8 @@ int main(int argc, char **argv) {
       SDL_RENDERER_PRESENTVSYNC);
   void *texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_BGR565,
                                     SDL_TEXTUREACCESS_STREAMING, 256, 224);
+
+  SDL_EventState(SDL_DROPFILE, SDL_ENABLE);
   while(SDL_PollEvent(&dragdropevent)) {
       if(dragdropevent.type == SDL_DROPFILE) break;
   }
