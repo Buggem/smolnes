@@ -1,8 +1,7 @@
 .PHONY: all clean
 all: smolnes deobfuscated
 
-WARN=-std=c99 \
-		 -Wall \
+WARN=		 -Wall \
      -Wno-parentheses \
 		 -Wno-misleading-indentation \
 		 -Wno-bool-operation \
