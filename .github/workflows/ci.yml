@@ -14,7 +14,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-linux:
+  build-emscripten:
     runs-on: ubuntu-${{ matrix.runs-on }}
     strategy:
       fail-fast: false
@@ -25,33 +25,45 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get -y update
-          sudo apt-get -y install libsdl2-dev
+      - uses: mymindstorm/setup-emsdk@v14
       - name: Build
         run: make -j$(nproc)
-  build-macos:
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Install dependencies
-        env:
-          HOMEBREW_NO_ANALYTICS: 1
-        run: brew install sdl2
-      - name: Build
-        run: make -j$(getconf NPROCESSORS_ONLN 2>/dev/null || getconf _NPROCESSORS_ONLN)
-  build-windows:
-    runs-on: windows-latest
-    env:
-      POWERSHELL_TELEMETRY_OPTOUT: 1
-    steps:
-      - uses: actions/checkout@v3
-      - uses: msys2/setup-msys2@v2
+      - name: Upload game (artifacts)
+        uses: actions/upload-artifact@v4
         with:
-          install: |
-            base-devel
-            mingw-w64-x86_64-SDL2
-            mingw-w64-x86_64-toolchain
-#            make
-#            mingw-w64-x86_64-gcc
-      - name: Build
-        shell: msys2 {0}
-        run: make -j $NUMBER_OF_PROCESSORS
+          name: artifact-${{ matrix.targetos }}-${{ matrix.targetarch }}
+          path: |
+            ./build/*
+  download:
+    needs: build-emscripten
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        ref: ghpages
+    - name: Setup Node & NPM
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20
+    - name: Download Artifact
+      uses: actions/download-artifact@v4
+      with:
+        path: ./
+        pattern: artifact-*
+        merge-multiple: true
+    - name: Uglify JS for faster runtime
+      run: |
+          npm install uglify-js -g
+          uglifyjs deobfuscated.js -c > deobfuscated.js.min
+          uglifyjs smolnes.js -c > smolnes.js.min
+          rm smolnes.js deobfuscated.js
+          mv deobfuscated.js.min deobfuscated.js
+          mv smolnes.js.min smolnes.js
+    - name: Push to GH Pages
+      run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "Update GH Pages as per master branch"
+          git push
