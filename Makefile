@@ -19,7 +19,7 @@ smolnes: smolnes.c
 
 deobfuscated: deobfuscated.c
 	mkdir -p build
-	emcc -O2 -s USE_SDL=2 -s EXPORTED_FUNCTIONS=_file_handler,_malloc,_free -s EXTRA_EXPORTED_RUNTIME_METHODS=ccall,cwrap -o build/$@.html $< -lSDL2 -g ${WARN}
+	emcc -O2 -s USE_SDL=2 -s EXPORTED_FUNCTIONS=_file_handler,_malloc,_free -s EXPORTED_RUNTIME_METHODS=ccall,cwrap -o build/$@.html $< -lSDL2 -g ${WARN}
 
 clean:
 	rm -f smolnes deobfuscated
