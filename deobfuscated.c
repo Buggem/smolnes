@@ -55,6 +55,9 @@ int shift_at = 0;
 
 SDL_Event dragdropevent;
 
+void *renderer;
+void *texture;
+
 // Read a byte from CHR ROM or CHR RAM.
 uint8_t *get_chr_byte(uint16_t a) {
   return &chrrom[chr[a >> chrbits] << chrbits | a % (1 << chrbits)];
@@ -257,20 +260,39 @@ int main(int argc, char **argv) {
   // Create window 1024x840. The framebuffer is 256x240, but we don't draw the
   // top or bottom 8 rows. Scaling up by 4x gives 1024x960, but that looks
   // squished because the NES doesn't have square pixels. So shrink it by 7/8.
-  void *renderer = SDL_CreateRenderer(
+  renderer = SDL_CreateRenderer(
       SDL_CreateWindow("smolnes", 0, 0, 1024, 840, SDL_WINDOW_SHOWN), -1,
       SDL_RENDERER_PRESENTVSYNC);
-  void *texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_BGR565,
+  texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_BGR565,
                                     SDL_TEXTUREACCESS_STREAMING, 256, 224);
+  EM_ASM(
+      document.body.addEventListener('dragover', function(e) {
+        e.preventDefault();
+      });
+  
+      document.body.addEventListener('drop', function(e) {
+        e.preventDefault();
+        const file = e.dataTransfer.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = function(event) {
+            const buf = new Uint8Array(event.target.result);
+            const ptr = Module._malloc(buf.byteLength);
+            Module.HEAPU8.set(buf, ptr);
+            ccall("file_handler", null, ['number', 'number'], [ptr, buf.byteLength]);
+            Module._free(ptr);
+          };
+          reader.readAsArrayBuffer(file);
+        }
+      });
+  )
+}
 
-  SDL_EventState(SDL_DROPFILE, SDL_ENABLE);
-  while(SDL_PollEvent(&dragdropevent)) {
-      if(dragdropevent.type == SDL_DROPFILE) break;
-  }
-  printf("%s", dragdropevent.drop.file);
-  return 0;
+void file_handler(char* file, uint32_t filelen) {
+  memset(rombuf, 0, 1024 * 1024);
 
-  SDL_RWread(SDL_RWFromFile(argv[1], "rb"), rombuf, 1024 * 1024, 1);
+  memcpy(rombuf, file, filelen);
+  
   // Start PRG0 after 16-byte header.
   rom = rombuf + 16;
   // PRG1 is the last bank. `rombuf[4]` is the number of 16k PRG banks.
