@@ -15,10 +15,12 @@ WARN=-std=c99 \
 		 -Wno-switch
 
 smolnes: smolnes.c
-	$(CC) -O2 -o $@ $< -lSDL2 -g ${WARN}
+	mkdir -p build
+	emcc -O2 -s USE_SDL=2 -o build/$@.html $< -lSDL2 -g ${WARN}
 
 deobfuscated: deobfuscated.c
-	$(CC) -O2 -o $@ $< -lSDL2 -g ${WARN}
+	mkdir -p build
+	emcc -O2 -s USE_SDL=2 -o build/$@.html $< -lSDL2 -g ${WARN}
 
 clean:
 	rm -f smolnes deobfuscated
