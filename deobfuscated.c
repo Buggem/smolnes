@@ -53,6 +53,8 @@ uint16_t scany,          // Scanline Y
 
 int shift_at = 0;
 
+SDL_Event dragdropevent;
+
 // Read a byte from CHR ROM or CHR RAM.
 uint8_t *get_chr_byte(uint16_t a) {
   return &chrrom[chr[a >> chrbits] << chrbits | a % (1 << chrbits)];
@@ -250,6 +252,22 @@ uint8_t read_pc() {
 uint8_t set_nz(uint8_t val) { return P = P & 125 | val & 128 | !val * 2; }
 
 int main(int argc, char **argv) {
+  SDL_Init(SDL_INIT_VIDEO);
+  key_state = (uint8_t*)SDL_GetKeyboardState(0);
+  // Create window 1024x840. The framebuffer is 256x240, but we don't draw the
+  // top or bottom 8 rows. Scaling up by 4x gives 1024x960, but that looks
+  // squished because the NES doesn't have square pixels. So shrink it by 7/8.
+  void *renderer = SDL_CreateRenderer(
+      SDL_CreateWindow("smolnes", 0, 0, 1024, 840, SDL_WINDOW_SHOWN), -1,
+      SDL_RENDERER_PRESENTVSYNC);
+  void *texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_BGR565,
+                                    SDL_TEXTUREACCESS_STREAMING, 256, 224);
+  while(SDL_PollEvent(&dragdropevent)) {
+      if(dragdropevent.type == SDL_DROPFILE) break;
+  }
+  printf("%s", dragdropevent.drop.file);
+  return;
+
   SDL_RWread(SDL_RWFromFile(argv[1], "rb"), rombuf, 1024 * 1024, 1);
   // Start PRG0 after 16-byte header.
   rom = rombuf + 16;
@@ -272,16 +290,7 @@ int main(int argc, char **argv) {
   PCL = mem(~3, ~0, 0, 0);
   PCH = mem(~2, ~0, 0, 0);
 
-  SDL_Init(SDL_INIT_VIDEO);
-  key_state = (uint8_t*)SDL_GetKeyboardState(0);
-  // Create window 1024x840. The framebuffer is 256x240, but we don't draw the
-  // top or bottom 8 rows. Scaling up by 4x gives 1024x960, but that looks
-  // squished because the NES doesn't have square pixels. So shrink it by 7/8.
-  void *renderer = SDL_CreateRenderer(
-      SDL_CreateWindow("smolnes", 0, 0, 1024, 840, SDL_WINDOW_SHOWN), -1,
-      SDL_RENDERER_PRESENTVSYNC);
-  void *texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_BGR565,
-                                    SDL_TEXTUREACCESS_STREAMING, 256, 224);
+
 
 loop:
   cycles = nomem = 0;
