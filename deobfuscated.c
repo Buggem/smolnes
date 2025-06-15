@@ -266,7 +266,7 @@ int main(int argc, char **argv) {
       if(dragdropevent.type == SDL_DROPFILE) break;
   }
   printf("%s", dragdropevent.drop.file);
-  return;
+  return 0;
 
   SDL_RWread(SDL_RWFromFile(argv[1], "rb"), rombuf, 1024 * 1024, 1);
   // Start PRG0 after 16-byte header.
