@@ -279,7 +279,7 @@ int main(int argc, char **argv) {
   );
 }
 
-int loop() {
+void loop(void) {
   cycles = nomem = 0;
   if (nmi_irq)
     goto nmi_irq;
@@ -687,7 +687,7 @@ int loop() {
         // Handle SDL events.
         for (SDL_Event event; SDL_PollEvent(&event);)
           if (event.type == SDL_QUIT)
-            return 0;
+            exit();
       }
 
       // Clear ppustatus.
