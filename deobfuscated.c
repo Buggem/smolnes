@@ -740,7 +740,7 @@ void file_handler(char* file, uint32_t filelen) {
   // Start at address in reset vector, at $FFFC.
   PCL = mem(~3, ~0, 0, 0);
   PCH = mem(~2, ~0, 0, 0);
-  emscripten_set_main_loop(loop, 60, 1);
+  emscripten_set_main_loop(loop, 60, 0);
 }
 
 
