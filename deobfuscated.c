@@ -277,7 +277,7 @@ int main(int argc, char **argv) {
   );
 }
 
-int file_handler(char* file, uint32_t filelen) {
+void file_handler(char* file, uint32_t filelen) {
   SDL_Init(SDL_INIT_VIDEO);
   key_state = (uint8_t*)SDL_GetKeyboardState(0);
   // Create window 1024x840. The framebuffer is 256x240, but we don't draw the
@@ -312,10 +312,11 @@ int file_handler(char* file, uint32_t filelen) {
   // Start at address in reset vector, at $FFFC.
   PCL = mem(~3, ~0, 0, 0);
   PCH = mem(~2, ~0, 0, 0);
+  emscripten_set_main_loop(loop, 60, 1);
+}
 
 
-
-loop:
+int loop() {
   cycles = nomem = 0;
   if (nmi_irq)
     goto nmi_irq;
@@ -739,5 +740,4 @@ loop:
       scany %= 262;
     }
   }
-  goto loop;
 }
