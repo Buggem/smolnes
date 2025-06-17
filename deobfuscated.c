@@ -55,6 +55,8 @@ int shift_at = 0;
 
 SDL_Event dragdropevent;
 
+void *renderer;
+void *texture;
 
 
 // Read a byte from CHR ROM or CHR RAM.
@@ -276,45 +278,6 @@ int main(int argc, char **argv) {
       });
   );
 }
-
-void file_handler(char* file, uint32_t filelen) {
-  SDL_Init(SDL_INIT_VIDEO);
-  key_state = (uint8_t*)SDL_GetKeyboardState(0);
-  // Create window 1024x840. The framebuffer is 256x240, but we don't draw the
-  // top or bottom 8 rows. Scaling up by 4x gives 1024x960, but that looks
-  // squished because the NES doesn't have square pixels. So shrink it by 7/8.
-  void *renderer = SDL_CreateRenderer(
-      SDL_CreateWindow("smolnes", 0, 0, 1024, 840, SDL_WINDOW_SHOWN), -1,
-      SDL_RENDERER_PRESENTVSYNC);
-  void *texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_BGR565,
-                                    SDL_TEXTUREACCESS_STREAMING, 256, 224);
-  memset(rombuf, 0, 1024 * 1024);
-
-  memcpy(rombuf, file, filelen);
-  
-  // Start PRG0 after 16-byte header.
-  rom = rombuf + 16;
-  // PRG1 is the last bank. `rombuf[4]` is the number of 16k PRG banks.
-  prg[1] = rombuf[4] - 1;
-  // CHR0 ROM is after all PRG data in the file. `rombuf[5]` is the number of
-  // 8k CHR banks. If it is zero, assume the game uses CHR RAM.
-  chrrom = rombuf[5] ? rom + ((prg[1] + 1) << 14) : chrram;
-  // CHR1 is the last 4k bank.
-  chr[1] = (rombuf[5] || 1) * 2 - 1;
-  // Bit 0 of `rombuf[6]` is 0=>horizontal mirroring, 1=>vertical mirroring.
-  mirror = 3 - rombuf[6] % 2;
-  if (rombuf[6] / 16 == 4) {
-    mem(0, 128, 0, 1); // Update to default mmc3 banks
-    prgbits--;         // 8kb PRG banks
-    chrbits -= 2;      // 1kb CHR banks
-  }
-
-  // Start at address in reset vector, at $FFFC.
-  PCL = mem(~3, ~0, 0, 0);
-  PCH = mem(~2, ~0, 0, 0);
-  emscripten_set_main_loop(loop, 60, 1);
-}
-
 
 int loop() {
   cycles = nomem = 0;
@@ -741,3 +704,44 @@ int loop() {
     }
   }
 }
+
+void file_handler(char* file, uint32_t filelen) {
+  SDL_Init(SDL_INIT_VIDEO);
+  key_state = (uint8_t*)SDL_GetKeyboardState(0);
+  // Create window 1024x840. The framebuffer is 256x240, but we don't draw the
+  // top or bottom 8 rows. Scaling up by 4x gives 1024x960, but that looks
+  // squished because the NES doesn't have square pixels. So shrink it by 7/8.
+  renderer = SDL_CreateRenderer(
+      SDL_CreateWindow("smolnes", 0, 0, 1024, 840, SDL_WINDOW_SHOWN), -1,
+      SDL_RENDERER_PRESENTVSYNC);
+  texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_BGR565,
+                                    SDL_TEXTUREACCESS_STREAMING, 256, 224);
+  memset(rombuf, 0, 1024 * 1024);
+
+  memcpy(rombuf, file, filelen);
+  
+  // Start PRG0 after 16-byte header.
+  rom = rombuf + 16;
+  // PRG1 is the last bank. `rombuf[4]` is the number of 16k PRG banks.
+  prg[1] = rombuf[4] - 1;
+  // CHR0 ROM is after all PRG data in the file. `rombuf[5]` is the number of
+  // 8k CHR banks. If it is zero, assume the game uses CHR RAM.
+  chrrom = rombuf[5] ? rom + ((prg[1] + 1) << 14) : chrram;
+  // CHR1 is the last 4k bank.
+  chr[1] = (rombuf[5] || 1) * 2 - 1;
+  // Bit 0 of `rombuf[6]` is 0=>horizontal mirroring, 1=>vertical mirroring.
+  mirror = 3 - rombuf[6] % 2;
+  if (rombuf[6] / 16 == 4) {
+    mem(0, 128, 0, 1); // Update to default mmc3 banks
+    prgbits--;         // 8kb PRG banks
+    chrbits -= 2;      // 1kb CHR banks
+  }
+
+  // Start at address in reset vector, at $FFFC.
+  PCL = mem(~3, ~0, 0, 0);
+  PCH = mem(~2, ~0, 0, 0);
+  emscripten_set_main_loop(loop, 60, 1);
+}
+
+
+
