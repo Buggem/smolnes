@@ -1,5 +1,6 @@
 #include <SDL2/SDL.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <emscripten.h>
 #define PULL mem(++S, 1, 0, 0)
 #define PUSH(x) mem(S--, 1, x, 1)
@@ -280,6 +281,7 @@ int main(int argc, char **argv) {
 }
 
 void loop(void) {
+  printf("loop started");
   cycles = nomem = 0;
   if (nmi_irq)
     goto nmi_irq;
@@ -703,6 +705,7 @@ void loop(void) {
       scany %= 262;
     }
   }
+  printf("got to the end of the loop");
 }
 
 void file_handler(char* file, uint32_t filelen) {
