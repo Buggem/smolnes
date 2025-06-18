@@ -278,6 +278,10 @@ int main(int argc, char **argv) {
         }
       });
   );
+
+  emscripten_exit_with_live_runtime();
+
+  return 0;
 }
 
 void loop(void) {
